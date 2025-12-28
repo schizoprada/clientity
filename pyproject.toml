@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "clientity"
+dynamic = ["version"]
+description = "rapid http clients"
+readme = "docs/README.md"
+authors = [
+    {name = "Joel Yisrael", email = "schizoprada@gmail.com"}
+]
+dependencies = [
+    "pydantic",
+    "loguru"
+]

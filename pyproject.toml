@@ -14,3 +14,16 @@ dependencies = [
     "pydantic",
     "loguru"
 ]
+
+[tool.hatch.version]
+path = "src/clientity/__init__.py"
+
+[project.optional-dependencies]
+dev = [
+    "pytest"
+]
+engines = [
+    "requests",
+    "httpx",
+    "aiohttp"
+]

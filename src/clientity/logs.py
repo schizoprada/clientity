@@ -1,5 +1,5 @@
 from __future__ import annotations
-import typing as t
+import os, typing as t
 
 from loguru import logger, Logger
 
@@ -14,7 +14,13 @@ class DevNull:
 
     def __ignore(self, *args, **kwargs) -> None: pass
 
+def devlogs() -> bool:
+    env = os.getenv('CLIENTITYLOGS', '').strip()
+    if not env: return False
+    return (env.lower() in ['1', 'true', 'yes', 't'])
+
+
 devnull = DevNull()
-log = logger
+log = logger if devlogs() else devnull
 
 Log = t.Union[Logger, DevNull]

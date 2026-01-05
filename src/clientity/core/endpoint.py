@@ -32,12 +32,15 @@ class Endpoint:
         responding: Responding = None
         ) -> None:
         self.method = method
-        self.location = location if isinstance(location, Location) else Location(location)
+        self.location = Location(location)
         self.hooks = (hooks or Hooks())
         self.querying = querying
         self.requesting = requesting
         self.responding = responding
 
+    @property
+    def name(self) -> str:
+        return self.location.name
 
     def __copy(self, **updates) -> 'Endpoint':
         data = {
@@ -46,9 +49,11 @@ class Endpoint:
         }
         return Endpoint(**data)
 
+    def mutate(self, **kwargs) -> 'Endpoint': return self.__copy(**kwargs)
+
 
     def at(self, path: Locatable) -> 'Endpoint':
-        location = path if isinstance(path, Location) else Location(path)
+        location = Location(path)
         return self.__copy(location=location)
 
     def prehook(self, call: Call) -> 'Endpoint':
@@ -66,13 +71,13 @@ class Endpoint:
         return self.__copy(hooks=hooks)
 
     def queries(self, model: Requesting) -> 'Endpoint':
-        return self.__copy()
+        return self.__copy(querying=model)
 
     def requests(self, model: Requesting) -> 'Endpoint':
-        return self.__copy()
+        return self.__copy(requesting=model)
 
     def responds(self, model: Responding) -> 'Endpoint':
-        return self.__copy()
+        return self.__copy(responding=model)
 
     def instructions(self) -> 'Instructions':
         data = {
@@ -89,20 +94,30 @@ class Endpoint:
         return self.instructions()
 
 
-    def __lmatmul__(self, path: Locatable) -> 'Endpoint': return self.at(path)
+    # operators
+    def __matmul__(self, path: Locatable) -> 'Endpoint':
+        """@ - location"""
+        return self.at(path)
 
-    def __or__(self, hook: Call) -> 'Endpoint':
-        # TODO:
-            # determine which hook type based on context
-        raise NotImplementedError
+    def __xor__(self, model: Requesting) -> 'Endpoint':
+        """^ - query model"""
+        return self.queries(model)
 
     def __lshift__(self, model: Requesting) -> 'Endpoint':
-        # TODO:
-            # determine if this should go to querying or to requesting based on context
-        raise NotImplementedError
+        """<< - body model"""
+        return self.requests(model)
 
     def __rshift__(self, model: Responding) -> 'Endpoint':
+        """>> - response model"""
         return self.responds(model)
+
+    def __le__(self, call: Call) -> 'Endpoint':
+        """<= - pre-hook"""
+        return self.prehook(call)
+
+    def __ge__(self, call: Call) -> 'Endpoint':
+        """>= - post-hook"""
+        return self.posthook(call)
 
 
 class __Factory:

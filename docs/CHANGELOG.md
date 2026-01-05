@@ -1,5 +1,65 @@
 # `clientity` -- changelog
 
+## [0.1.5] -- Jan. 4th, 2026
+
+### Added
++ **Grouping system**: Base `Grouping` class for organizing endpoints
+  - `Resource`: Dependent grouping with relative `location`, prepends path to nested endpoints
+  - `Namespace`: Independent grouping with absolute `base`, optional own `interface`/`adapter`
+  - Nested resource support with `__nest__` and `Located` protocol
+  - `endpoints()` iterator utility on base `Grouping`
+
++ **Adapters**: Library-specific request building and sending
+  - `Adapter` ABC with `build()` and `send()` methods
+  - `RequestsAdapter` for `requests` library
+  - `HttpxAdapter` for `httpx` library  
+  - `AiohttpAdapter` for `aiohttp` library (fire-and-forget or session reuse modes)
+  - `adapt()` factory function with `Compatible()` detection
+
++ **Utilities**:
+  - `synced`: Inverse of `asynced` - wraps async callables to sync with `eval` option
+  - `dictate`: Extract dict from model instances (pydantic, dataclass, etc.)
+  - `sift.instructions()`: Convenience method for sifting with `Instructions`
+  - `domain()`: Extract domain name from URL
+  - `bound()`: Moved to utils/typers.py
+
++ **Type hints**:
+  - `Located` protocol for objects with `location` attribute
+  - `Requested` hint for embody input
+  - `Responded` hint for execution return type
+  - `WrappedEndpoint` = `Union[Endpoint, Bound[Endpoint]]`
+
+### Changed
+* `Location.__new__`: Now idempotent - returns existing Location unchanged
+* `Location.name`: Property returning PascalCase name from path segments (excluding params)
+* `Endpoint.mutate()`: Public method exposing `__copy` for modification
+* `Client.__init__`: Now accepts `Interfacing` (interface or callable returning interface)
+* `embody()`: Parameter type changed from `Requesting` to `Optional[Requested]`
+
+### Fixed
+* `synced`/`asynced` overload signatures for proper type inference
+* Name mangling issues with abstract methods (`__wrap__` -> `__wrap__`)
+
+---
+
+## Current Agenda
+
+### Immediate
+1. Update `Client` to handle `Resource` and `Namespace` assignment in `__setattr__`
+2. Extract shared execution logic from `Client.__x` and `Namespace.__x` into utility
+3. Test full flow: Client -> Resource -> Endpoint -> execution
+
+### Pending
+- IDE typing / signatures (`Unpack[TypedDict]` for kwargs autocomplete)
+- `domain()` utility implementation (currently raises)
+
+### Pinned for Later
+1. **Iterable response models**: Handle `list[Item]` responses, sequence parsing, `__responds__` for collections
+2. **WebSocket clients**: Different protocol handling, maybe `ws_endpoint` or separate client type
+3. **CLI generation**: `clientity generate --source /path/to/spec --destination /path/to/client.py` from OpenAPI/FastAPI/Flask specs
+
+---
+
 ## [0.1.0] -- Dec. 29, 2025
 * Initial project scaffolding and core primitives
 

@@ -55,7 +55,7 @@ class Instructions:
         responding: Responding = None
     ) -> None:
         self.method = method
-        self.location = location if isinstance(location, Location) else Location(location)
+        self.location = Location(location)
         self.hooks = (hooks or Hooks())
         self.querying = querying
         self.requesting = requesting
@@ -75,5 +75,5 @@ class Instructions:
         return Instructions(**data)
 
     def prepend(self, prefix: Locatable) -> 'Instructions':
-        location = prefix if isinstance(prefix, Location) else Location(prefix)
+        location = Location(prefix)
         return self.merge(location=(location / self.location))

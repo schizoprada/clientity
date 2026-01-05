@@ -2,6 +2,9 @@
 from .url import (
     URL, Location, Locatable
 )
+from .bound import (
+    Bound
+)
 from .method import (
     MethodType, Methods,
     GET, PUT, POST, HEAD,

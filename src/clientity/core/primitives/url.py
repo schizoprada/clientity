@@ -18,11 +18,23 @@ class Location(str):
     PARAMEX: t.ClassVar[re.Pattern] = re.compile(r"\{(\w+)\}")
     parameters: list[str]
 
-    def __new__(cls, path: str = "") -> 'Location':
+    def __new__(cls, path: Locatable = "") -> 'Location':
+        if isinstance(path, Location): return path
         instance = str.__new__(cls, path.strip("/"))
         instance.parameters = cls.PARAMEX.findall(instance)
         log.debug(f"(Location.__new__) parsed {len(instance.parameters)} parameters from location path: {path}")
         return instance
+
+    @property
+    def name(self) -> str:
+        param = lambda v: v.startswith('{') and v.endswith('}')
+        parts = [
+            p.title() for p in
+            self.split('/')
+            if not param(p)
+        ]
+        return ''.join(parts)
+
 
     @property
     def ready(self) -> bool:
@@ -63,7 +75,7 @@ class URL(str):
         base: str,
         location: Locatable = ""
         ) -> 'URL':
-        loc = location if isinstance(location, Location) else Location(location)
+        loc = Location(location)
         instance = str.__new__(cls, "")
         instance.base = base.rstrip("/")
         instance.location = loc

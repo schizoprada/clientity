@@ -8,6 +8,8 @@ from clientity.core.primitives import (
     MethodType, Location, Locatable, Instructions, Hooks,
     GET, PUT, HEAD, POST, PATCH, DELETE, OPTIONS
 )
+if t.TYPE_CHECKING:
+    from clientity.core.primitives.bound import Bound
 
 class Endpoint:
     __copying__: set[str] = {
@@ -93,31 +95,38 @@ class Endpoint:
         # The client wrapper will handle args/kwargs at execution time
         return self.instructions()
 
+    if t.TYPE_CHECKING:
+        def __matmul__(self, path: str) -> "Bound['Endpoint']": ...
+        def __mod__(self, model: Requesting) -> "Bound['Endpoint']": ...
+        def __lshift__(self, model: Requesting) -> "Bound['Endpoint']": ...
+        def __rshift__(self, model: Responding) -> "Bound['Endpoint']": ...
+        def __and__(self, call: Call) -> "Bound['Endpoint']": ...
+        def __or__(self, call: Call) -> "Bound['Endpoint']": ...
+    else:
+        # operators
+        def __matmul__(self, path: Locatable) -> 'Endpoint':
+            """@ - location"""
+            return self.at(path)
 
-    # operators
-    def __matmul__(self, path: Locatable) -> 'Endpoint':
-        """@ - location"""
-        return self.at(path)
+        def __mod__(self, model: Requesting) -> 'Endpoint':
+            """% - query model"""
+            return self.queries(model)
 
-    def __xor__(self, model: Requesting) -> 'Endpoint':
-        """^ - query model"""
-        return self.queries(model)
+        def __lshift__(self, model: Requesting) -> 'Endpoint':
+            """<< - body model"""
+            return self.requests(model)
 
-    def __lshift__(self, model: Requesting) -> 'Endpoint':
-        """<< - body model"""
-        return self.requests(model)
+        def __rshift__(self, model: Responding) -> 'Endpoint':
+            """>> - response model"""
+            return self.responds(model)
 
-    def __rshift__(self, model: Responding) -> 'Endpoint':
-        """>> - response model"""
-        return self.responds(model)
+        def __and__(self, call: Call) -> 'Endpoint':
+            """& - pre-hook"""
+            return self.prehook(call)
 
-    def __le__(self, call: Call) -> 'Endpoint':
-        """<= - pre-hook"""
-        return self.prehook(call)
-
-    def __ge__(self, call: Call) -> 'Endpoint':
-        """>= - post-hook"""
-        return self.posthook(call)
+        def __or__(self, call: Call) -> 'Endpoint':
+            """| - post-hook"""
+            return self.posthook(call)
 
 
 class __Factory:

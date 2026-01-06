@@ -10,7 +10,6 @@ from clientity.core.primitives import MethodType
 
 
 class Adapter(abc.ABC, t.Generic[RequestObject]):
-
     @abc.abstractmethod
     def build(
         self,
@@ -29,8 +28,8 @@ class Adapter(abc.ABC, t.Generic[RequestObject]):
         ) -> ResponseObject:
         ...
 
-    @abc.abstractmethod
     @classmethod
+    @abc.abstractmethod
     def Compatible(
         cls,
         interface: t.Any

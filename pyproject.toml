@@ -20,10 +20,15 @@ path = "src/clientity/__init__.py"
 
 [project.optional-dependencies]
 dev = [
-    "pytest"
+    "pytest",
+    "pytest-asyncio"
 ]
 engines = [
     "requests",
     "httpx",
     "aiohttp"
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

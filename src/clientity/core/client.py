@@ -4,11 +4,11 @@ import typing as t
 
 from clientity.logs import log
 from clientity.core.hints import ResponseObject, Responded
-from clientity.core.utils import (
-    sift, embody, domain,
-    synced, dictate, bound
-)
+from clientity.core.utils import http, bound, synced
 from clientity.core.endpoint import Endpoint
+from clientity.core.grouping import (
+    Grouping, Namespace, Resource
+)
 from clientity.core.protocols import (
     Interface,
     Interfacing
@@ -19,7 +19,10 @@ from clientity.core.primitives import (
 )
 from clientity.core.adapters import adapt, Adapter
 
+Binds = dict[str, Bound[Endpoint]]
+
 class Client:
+    __bound__: Binds
     base: str
     interface: Interface
 
@@ -29,58 +32,67 @@ class Client:
         base: str = "",
         name: str = ""
         ) -> None:
-        self.name = (name or domain(base))
+        self.__bound__ = {}
+        self.name = (name or http.domain(base))
         self.base = base.rstrip("/")
         self.interface = interface if (not callable(interface)) else (synced(interface)())
         self.adapter: Adapter = adapt(self.interface)
 
-    async def __x(
-        self,
-        instructions: Instructions,
-        exhaust: bool = False,
-        *args, **kwargs
-        ) -> Responded:
-        pdata, qdata, bdata = sift.instructions(*args, provided=instructions, exhaust=exhaust, **kwargs)
-
-        url = URL(self.base, instructions.location).resolve(**pdata)
-        query, body = None, None
-
-        if (qdata and instructions.querying):
-            query = dictate(instructions.querying(**qdata))
-
-        if (bdata and instructions.requesting):
-            body = embody(instructions.requesting(**bdata))
-
-        # TODO: adapter for request objects
-        request = self.adapter.build(
-            url=url, method=instructions.method,
-            params=query, body=body
-        )
-        for hook in instructions.hooks.before:
-            request = await hook(request)
-
-        # TODO: interface send()
-        response = await self.adapter.send(request)
-        for hook in instructions.hooks.after:
-            response = await hook(response)
-
-        if instructions.responding:
-            if hasattr(instructions.responding, '__respond__'):
-                return instructions.responding.__respond__(response)
-
-        return response
-
-
-
-    def __wrap(self, endpoint: Endpoint, exhaust: bool = False,) -> Bound[Endpoint]:
+    def __wrap(self, endpoint: Endpoint, exhaust: bool = False) -> Bound[Endpoint]:
+        base, adapter, instructions = self.base, self.adapter, endpoint.instructions()
         async def wrapper(*args, **kwargs) -> Responded:
-            return await self.__x(endpoint.instructions(), exhaust, *args, **kwargs)
+            return await http.execute(
+                base, adapter, instructions,
+                exhaust, *args, **kwargs
+            )
         return bound(endpoint, wrapper)
 
+    def __spaced(self, namespace: Namespace) -> Namespace:
+        log.debug(f"(Client[{self.name}]) preparing namespace for attribution: {namespace.name}")
+        if namespace.independent:
+            log.debug(f"(Client[{self.name}]) namespace[{namespace.name}] is independent, returning as is")
+            return namespace
+        wrapped = Namespace(base=self.base, name=namespace.name)
+        wrapped.adapter = self.adapter
+        wrapped.interface = self.interface
+        for name, endpoint in namespace.endpoints():
+            setattr(wrapped, name, self.__wrap(endpoint))
+        for name, group in namespace.groupings():
+            if not isinstance(group, (Resource, Namespace)):
+                log.warning(f"(Client[{self.name}]) unknown grouping type: {type(group).__name__}")
+                continue
+            grouping = self.__sourced(group) if isinstance(group, Resource) else self.__spaced(group)
+            setattr(wrapped, name, grouping)
+        return wrapped
+
+    def __sourced(self, resource: Resource) -> Resource:
+        log.debug(f"(Client[{self.name}]) preparing resource for attribution: {resource.name}")
+        wrapped = Resource(resource.location)
+        for name, endpoint in resource.endpoints():
+            setattr(wrapped, name, self.__wrap(endpoint))
+        for name, group in resource.groupings():
+            if not isinstance(group, (Resource, Namespace)):
+                log.warning(f"(Client[{self.name}]) unknown grouping type: {type(group).__name__}")
+                continue
+            grouping = self.__sourced(group) if isinstance(group, Resource) else self.__spaced(group)
+            # bypass __setattr__ to avoid re-nesting
+            object.__setattr__(wrapped, name, grouping)
+        return wrapped
+
+    def __getattr__(self, name: str) -> t.Any:
+        raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
+
     def __setattr__(self, name: str, value: t.Any) -> None:
-        attr = value
+        default = lambda v: v
+        setter = default
+        special = [(Endpoint, self.__wrap), (Resource, self.__sourced), (Namespace, self.__spaced)]
+        for vtype, method in special:
+            if isinstance(value, vtype):
+                setter = method
+                break
+        attr = setter(value)
         if isinstance(value, Endpoint):
-            attr = self.__wrap(value)
+            self.__bound__[name] = attr
         super().__setattr__(name, attr)
 
 
@@ -88,3 +100,11 @@ class Client:
 
 def client(interface: Interface) -> Client:
     return Client(interface)
+
+
+"""
+def __getattr__(self, name: str) -> Bound[Endpoint]:#t.Union[Bound[Endpoint], Grouping]:
+    if name in self.__bound__:
+        return self.__bound__[name]
+    raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
+"""

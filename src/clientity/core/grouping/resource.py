@@ -44,5 +44,9 @@ class Resource(Grouping):
         log.debug(f"(Resource[{self.name}]) nesting resource: {child.name}")
         nested = Resource((self.location / child.location))
         for name, endpoint in child.endpoints():
-            setattr(nested, name, endpoint)
+            original = str(endpoint.location).removeprefix(str(child.location)).lstrip('/')
+            setattr(nested, name, endpoint.mutate(location=Location(original)))
         return nested
+
+    def __getattr__(self, name: str) -> t.Any:
+        raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")

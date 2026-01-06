@@ -2,8 +2,8 @@
 from __future__ import annotations
 import typing as t
 
-from clientity.core.hints import Callable, ResponseObject
-from clientity.core.utils import asynced
+from clientity.core.hints import Callable, Call, Requesting, Responding
+from clientity.core.utils.calls import asynced
 
 B = t.TypeVar("B")
 class Bound(t.Generic[B]):
@@ -16,3 +16,11 @@ class Bound(t.Generic[B]):
 
     async def __call__(self, *args, **kwargs):
         return await self.__caller__(*args, **kwargs)
+
+    if t.TYPE_CHECKING:
+        def __matmul__(self, path: str) -> 'Bound[B]': ...
+        def __mod__(self, model: Requesting) -> 'Bound[B]': ...
+        def __lshift__(self, model: Requesting) -> 'Bound[B]': ...
+        def __rshift__(self, model: Responding) -> 'Bound[B]': ...
+        def __and__(self, call: Call) -> 'Bound[B]': ...
+        def __or__(self, call: Call) -> 'Bound[B]': ...

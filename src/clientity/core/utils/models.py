@@ -2,7 +2,13 @@
 from __future__ import annotations
 import typing as t, dataclasses as dc
 
+from clientity.exc import ModelingError, ResponseError
 from clientity.logs import log
+from clientity.core.hints import (
+    Responding, Responded,
+    ResponseType, ResponseObject
+)
+from clientity.core.protocols import Responsive
 
 class __constructors:
     __known__: tuple[tuple[str, str], ...] = (
@@ -46,3 +52,36 @@ class __dictate:
         return dict(obj)
 
 dictate = __dictate()
+
+
+class __respond:
+    @t.overload
+    def __call__(self, model: None, response: ResponseObject) -> None: ...
+    @t.overload
+    def __call__(self, model: ResponseType, response: ResponseObject) -> ResponseType: ...
+    def __call__(
+        self,
+        model: Responding,
+        response: ResponseObject
+        ) -> Responded:
+        if model is None: return None
+        if issubclass(model, Responsive):
+            try:
+                return model.__respond__(response)
+            except Exception as e:
+                raise ModelingError(f"Failed to instantiate model ({model.__name__}) from response") from e
+
+        if (rbody:=getattr(response, 'json', None)):
+            if callable(rbody):
+                try:
+                    data = rbody()
+                except Exception as e:
+                    raise ResponseError(f"Failed to parse json data") from e
+
+                try:
+                    return model(**t.cast(dict, data))
+                except Exception as e:
+                    raise ModelingError(f"Failed to instantiate model ({model.__name__})") from e
+
+        raise ModelingError(f"No JSON method available in response") # not sure what to write here lol
+respond = __respond()

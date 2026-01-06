@@ -1,8 +1,8 @@
 from __future__ import annotations
 import os, typing as t
 
-from loguru import logger, Logger
-
+from loguru import logger
+from loguru._logger import Logger
 
 class DevNull:
     def __init__(self) -> None:

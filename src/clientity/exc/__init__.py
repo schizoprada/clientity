@@ -2,3 +2,5 @@
 from .base import (
     Error, ClientityError
 )
+from .http import ResponseError
+from .models import ModelingError

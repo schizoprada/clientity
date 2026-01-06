@@ -3,8 +3,8 @@ from __future__ import annotations
 import typing as t
 
 from clientity.logs import log
-from clientity.core.utils import asynced
 from clientity.core.hints import Call, Callable, Requesting, Responding
+from clientity.core.utils.calls import asynced
 from clientity.core.primitives.url import Location, Locatable
 from clientity.core.primitives.method import MethodType
 

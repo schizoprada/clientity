@@ -118,9 +118,6 @@ class __sift:
                 available -= pk
                 log.debug(f"(sift.__call__) available after path: {available}")
 
-
-
-
         query = {}
         if qf:
             qk = (available & qf)

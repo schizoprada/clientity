@@ -3,6 +3,7 @@ from __future__ import annotations
 import re, typing as t
 
 from clientity.logs import log
+from clientity.core.hints import Stringable
 
 Locatable = t.Union[str, 'Location']
 
@@ -40,7 +41,7 @@ class Location(str):
     def ready(self) -> bool:
         return (len(self.parameters) == 0)
 
-    def resolve(self, **params: str) -> str:
+    def resolve(self, **params: Stringable) -> str:
         log.debug(f"(location.resolve) resolving [{self}] with: {params}")
         result = str.__str__(self)
         for k, v in params.items():

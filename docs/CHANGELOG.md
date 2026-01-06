@@ -1,5 +1,36 @@
 # `clientity` -- changelog
 
+## [0.1.6] -- Jan. 6th, 2026
+
+### Added
++ **Execution utilities**: `http.execute` and `http.respond` extracted from Client/Namespace
++ **`groupings()` iterator**: On `Grouping` base class for iterating nested Resource/Namespace
++ **Integration test suite**: Full flow tests for Client → Resource → Namespace → Endpoint
+
+### Changed
+* **Operator mappings**: `%` for query model, `&` for prehook, `|` for posthook (precedence fix)
+* **Phantom types for DX**: Operators return `Bound[Endpoint]` to type checkers via `TYPE_CHECKING` block
+* **`embody()` fallback**: Now calls `dictate()` for unknown object types
+
+### Fixed
+* `Resource.__nest__` / `Namespace.__nest__` double-prepend bug (strips child location prefix)
+* `Client.__sourced` nested grouping re-nesting (bypass `__setattr__` with `object.__setattr__`)
+* `Grouping.__setattr__` changed `if` to `elif` for Grouping check
+* Various type hints: `Stringable` for URL params, `respond` overloads, `AsyncInterface` return types
+
+---
+
+## Current Agenda
+
+### Immediate
+1. Revisit DX typing for nested resource/namespace attribute access (`client.users.list` shows `Any`)
+
+### Pinned for Later
+1. IDE typing / signatures (`Unpack[TypedDict]` for kwargs autocomplete)
+2. Iterable response models
+3. WebSocket clients
+4. CLI generation
+
 ## [0.1.5] -- Jan. 4th, 2026
 
 ### Added

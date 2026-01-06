@@ -15,7 +15,8 @@ if t.TYPE_CHECKING:
     from clientity.core.adapters import Adapter
 
 WrappedEndpoint = t.Union[Endpoint, Bound[Endpoint]]
-GroupedEndpoint = tuple[str, WrappedEndpoint]
+GroupedEndpoint = tuple[str, Endpoint]
+GroupedGrouping = tuple[str, 'Grouping']
 
 class Grouping(abc.ABC):
 
@@ -26,6 +27,9 @@ class Grouping(abc.ABC):
     @abc.abstractmethod
     def __nest__(self, child: Located) -> 'Grouping':
         ...
+
+    def __getattr__(self, name: str) -> t.Any:
+        raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
 
     def __setattr__(self, name: str, value: t.Any) -> None:
         v = value
@@ -40,12 +44,17 @@ class Grouping(abc.ABC):
     def endpoints(self) -> t.Iterator[GroupedEndpoint]:
         def ref(ep: WrappedEndpoint) -> t.Optional[Endpoint]:
             if isinstance(ep, Endpoint): return ep
-            if isinstance(value, Bound):
-                if isinstance(value.__ref__, Endpoint):
-                    return value.__ref__
+            if isinstance(ep, Bound):
+                if isinstance(ep.__ref__, Endpoint):
+                    return ep.__ref__
             return None
         for name, value in self.__dict__.items():
-            if name.startswith('_'):
-                continue
+            if name.startswith('_'): continue
             if (endpoint:=ref(value)) is not None:
                 yield name, endpoint
+
+    def groupings(self) -> t.Iterator[GroupedGrouping]:
+        for name, value in self.__dict__.items():
+            if name.startswith('_'): continue
+            if isinstance(value, Grouping):
+                yield name, value

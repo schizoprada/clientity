@@ -84,7 +84,7 @@ class __execute:
             response = await hook(response)
             # maybe log changes later
 
-        print(f"instructions.responding: {instructions.responding}")
+        #print(f"instructions.responding: {instructions.responding}")
         if instructions.responding: # probably will need to swap out for a utility that handles known methods when `__respond__` isnt implemented
             log.debug(f"(http.execute) attempting to return response model: {instructions.responding.__name__}")
             try:

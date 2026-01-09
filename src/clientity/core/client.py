@@ -95,10 +95,12 @@ class Client:
             self.__bound__[name] = attr
         super().__setattr__(name, attr)
 
+    def __matmul__(self, base: str) -> 'Client':
+        """@ - set base URL"""
+        return Client(self.interface, base=base, name=self.name)
 
 
-
-def client(interface: Interface) -> Client:
+def client(interface: Interfacing) -> Client:
     return Client(interface)
 
 

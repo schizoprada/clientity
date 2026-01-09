@@ -68,3 +68,7 @@ class Namespace(Grouping):
 
     def __getattr__(self, name: str) -> t.Any:
         raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
+
+
+def namespace(interface: t.Optional[Interfacing] = None, base: str = "", name: str = "") -> Namespace:
+    return Namespace(base=base, name=name, interface=interface)

@@ -12,3 +12,8 @@ class Requestable(t.Protocol):
 class Responsive(t.Protocol):
     @classmethod
     def __respond__(cls, response: ResponseObject) -> t.Self: ...
+
+@t.runtime_checkable
+class ResponsiveFactory(t.Protocol):
+    @classmethod
+    def __respondall__(cls, response: ResponseObject) -> t.Sequence[t.Self]: ...

@@ -1,7 +1,8 @@
 # ~/clientity/src/clientity/core/protocols/__init__.py
 from .models import (
     Requestable,
-    Responsive
+    Responsive,
+    ResponsiveFactory
 )
 
 from .interface import (

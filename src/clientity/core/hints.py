@@ -28,8 +28,9 @@ type Embodied = tuple[str, t.Union[dict, bytes]]
 
 if t.TYPE_CHECKING:
     from clientity.core.protocols.models import Requestable, Responsive
+    from clientity.core.primitives.directives import Payload, Query, Unwrap
 
-Requesting = t.Union[None, t.Any, t.Type['Requestable']]
-Responding = t.Union[None, ResponseType, t.Type['Responsive']]
+Requesting = t.Union[None, t.Any, t.Type['Requestable'], 'Payload', 'Query']
+Responding = t.Union[None, ResponseType, t.Type['Responsive'], 'Unwrap']
 Responded = t.Union[ResponseObject, 'Responsive']
 Requested = t.Union['Requestable', dict, bytes, t.Any]

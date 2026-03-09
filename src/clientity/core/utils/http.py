@@ -8,7 +8,10 @@ from clientity.exc import ModelingError, ResponseError
 from clientity.logs import log
 from clientity.core.hints import Requested, Embodied, Responded
 from clientity.core.protocols import Requestable
-from clientity.core.primitives import URL
+from clientity.core.primitives import (
+    URL, Directive, Specs,
+    Query, Payload, Unwrap
+)
 from clientity.core.utils.calls import sift
 from clientity.core.utils.models import dictate, respond
 if t.TYPE_CHECKING:
@@ -41,6 +44,60 @@ def domain(url: str) -> str:
     return value
 
 class __execute:
+    def __query(
+        self,
+        querying: t.Any,
+        qdata: dict,
+        claimed: set[str],
+        **kwargs
+        ) -> t.Optional[dict]:
+        if isinstance(querying, Query):
+            # v1: no field list, nothing to claim
+            # future: Query with field list claims here
+            log.debug(f"(http.execute.__query) directive active -- no fields to claim")
+            return None
+        if not qdata: return None
+
+        log.debug(f"(http.execute.__query) preparing: {qdata}")
+        query = qdata if not querying else dictate(querying(**qdata))
+        claimed |= set(qdata.keys())
+        log.debug(f"(http.execute.__query) prepared: {query}")
+        return query
+
+    def __body(
+        self,
+        requesting: t.Any,
+        bdata: dict,
+        claimed: set[str],
+        **kwargs
+        ) -> t.Optional[Embodied]:
+        if isinstance(requesting, Payload):
+            leftover = {k: v for k, v in kwargs.items() if k not in claimed}
+            if not leftover: return None
+            log.debug(f"(http.execute.__body) payload [{requesting.key}]: {leftover}")
+            return (requesting.key, leftover)
+        if not bdata: return None
+        log.debug(f"(http.execute.__body) preparing: {bdata}")
+        body = embody(bdata) if not requesting else embody(requesting(**bdata))
+        log.debug(f"(http.execute.__body) prepared: {body}")
+        return body
+
+    def __response(
+        self,
+        responding: t.Any,
+        response: t.Any
+        ) -> Responded:
+        if isinstance(responding, Unwrap):
+            log.debug(f"(http.execute.__response) unwrapping: {responding}")
+            return responding.extract(response)
+        if responding:
+            log.debug(f"(http.execute.__response) modeling: {responding.__name__}")
+            try:
+                return respond(responding, response)
+            except (ModelingError, ResponseError) as e:
+                log.error(f"(http.execute.__response) model error (returning raw): {e!r}")
+        return response
+
     async def __call__(
         self,
         base: str,
@@ -51,45 +108,23 @@ class __execute:
         ) -> Responded:
         pdata, qdata, bdata = sift.instructions(*args, provided=instructions, exhaust=exhaust, **kwargs)
         url = URL(base, instructions.location).resolve(**pdata)
-        query, body = None, None
+        claimed = set(pdata.keys())
 
-        if qdata:
-            log.debug(f"(http.execute) preparing query data: {qdata}")
-            query = (
-                qdata if not instructions.querying else
-                dictate(instructions.querying(**qdata))
-            )
-            log.debug(f"(http.execute) prepared query data: {query}")
-
-        if bdata:
-            log.debug(f"(http.execute) preparing body data: {bdata}")
-            body = (
-                embody(bdata) if not instructions.requesting
-                else embody(instructions.requesting(**bdata))
-            )
-            log.debug(f"(http.execute) prepared body data: {body}")
+        query = self.__query(instructions.querying, qdata, claimed, **kwargs)
+        body = self.__body(instructions.requesting, bdata, claimed, **kwargs)
 
         request = adapter.build(url=url, method=instructions.method, params=query, body=body)
         log.info(f"(http.execute) built request: {request}")
         for i, hook in enumerate(prehooks:=instructions.hooks.before):
-            log.debug(f"(http.execute) applying pre-hook [{i}/{len(prehooks)}]: {hook.__name__}")
+            log.debug(f"(http.execute) pre-hook [{i}/{len(prehooks)}]: {hook.__name__}")
             request = await hook(request)
-            # maybe log changes later
-
 
         response = await adapter.send(request)
-        log.debug(f"(http.execute) received response: {response}")
+        log.debug(f"(http.execute) response: {response}")
         for i, hook in enumerate(posthooks:=instructions.hooks.after):
-            log.debug(f"(http.execute) applying post-hook [{i}/{len(posthooks)}]: {hook.__name__}")
+            log.debug(f"(http.execute) post-hook [{i}/{len(posthooks)}]: {hook.__name__}")
             response = await hook(response)
-            # maybe log changes later
 
-        #print(f"instructions.responding: {instructions.responding}")
-        if instructions.responding: # probably will need to swap out for a utility that handles known methods when `__respond__` isnt implemented
-            log.debug(f"(http.execute) attempting to return response model: {instructions.responding.__name__}")
-            try:
-                return respond(instructions.responding, response)
-            except (ModelingError, ResponseError) as e:
-                log.error(f"(http.execute) error returning response model (returning response object): {e!r}")
-        return response
+        return self.__response(instructions.responding, response)
+
 execute = __execute()

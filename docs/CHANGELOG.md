@@ -1,5 +1,43 @@
 # `clientity` -- changelog
 
+## [0.1.7] -- Mar. 9th, 2026
+
+### Added
++ **Directives system**: Lightweight alternatives to full model classes for query/body/response handling
+  - `Query`: Query param directive (field list support stubbed for later)
+  - `Payload`: Body directive with key override (`payload['data']`)
+  - `Unwrap`: Response extraction with method access (`.json`, `.text`, `.bytes`), path traversal (`['data']['items']`), and callable pipeline support
+  - `Directive` protocol and `Specs` stubs for future expansion
+  - Module-level singletons: `ct.query`, `ct.payload`, `ct.unwrap`
++ **No-paren grouping factories**: `ct.resource @ "users"` and `ct.namespace @ "https://api.com"` via `__matmul__` on factory objects
++ **Top-level method shortcuts**: `ct.get`, `ct.post`, `ct.put`, `ct.patch`, `ct.delete`, `ct.head`, `ct.options` as aliases
++ **Top-level aliases**: `ct.rs`, `ct.ns`, `ct.ep`
+
+### Changed
+* **`__execute` refactored**: Extracted `__query`, `__body`, `__response` methods to eliminate if/elif chains in `__call__`
+* **`Requesting`/`Responding` type hints**: Now include `Payload`, `Query`, `Unwrap` in their unions for proper IDE support
+
+### Confirmed
+* **Pathless endpoints already work**: `ct.get << Model >> Response` (no `@ ""` needed) confirmed functional
+
+---
+
+## Current Agenda
+
+### Immediate
+1. Wire `__execute.__query`, `__execute.__body`, `__execute.__response` with directive detection (partially implemented)
+2. Integration test directives through full Client → Adapter → Response pipeline
+3. Hinting / IDE compliance improvements
+
+### Pinned for Later
+1. `Payload` field lists and typed fields (`payload['data', ['id', 'cat']]`, `payload[{'id': int}]`)
+2. `Query` field lists (`query['q', 'limit']`)
+3. `Namespace` factory tuple/subscript unpacking (`ct.namespace[httpx.AsyncClient] @ "base"`)
+4. Approach B migration (unified `Requesting`/`Responding` protocols) if directive surface grows
+5. Excess positional → payload resolution after path claims
+6. Built-in utilities suite (cross-cutting, tiered)
+
+
 ## [0.1.6] -- Jan. 6th, 2026
 
 ### Added

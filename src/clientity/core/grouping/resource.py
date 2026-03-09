@@ -51,4 +51,9 @@ class Resource(Grouping):
     def __getattr__(self, name: str) -> t.Any:
         raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
 
-def resource(location: Locatable = "") -> Resource: return Resource(location)
+
+class __ResourceFactory:
+    def __call__(self, location: Locatable = "") -> Resource: return Resource(location)
+    def __matmul__(self, path: Locatable) ->  Resource: return Resource(path)
+
+resource = __ResourceFactory()

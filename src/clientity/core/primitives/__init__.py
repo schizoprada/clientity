@@ -13,3 +13,8 @@ from .method import (
 from .instructions import (
     Hooks, Instructions
 )
+from .directives import (
+    Directive, Specs,
+    Query, Payload, Unwrap,
+    query, payload, unwrap
+)

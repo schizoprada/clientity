@@ -70,5 +70,14 @@ class Namespace(Grouping):
         raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
 
 
-def namespace(interface: t.Optional[Interfacing] = None, base: str = "", name: str = "") -> Namespace:
-    return Namespace(base=base, name=name, interface=interface)
+class __NamespaceFactory:
+    def __matmul__(self, base: str) -> Namespace: return Namespace(base=base)
+    def __call__(
+        self,
+        interface: t.Optional[Interfacing] = None,
+        base: str = "",
+        name: str = ""
+        ) -> Namespace:
+        return Namespace(base=base, name=name, interface=interface)
+
+namespace = __NamespaceFactory()

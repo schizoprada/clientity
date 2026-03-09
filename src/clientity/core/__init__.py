@@ -1,7 +1,7 @@
 from .utils import (
     asynced, embody
 )
-from .client import client
+from .client import client, Client
 from .endpoint import endpoint
 from .grouping import resource, namespace
 
@@ -15,5 +15,8 @@ from .primitives import (
     URL, MethodType, Methods,
     GET, PUT, POST, HEAD,
     PATCH, DELETE, OPTIONS,
-    Hooks, Instructions
+    Hooks, Instructions,
+    Specs, Directive,
+    Query, Payload, Unwrap,
+    query, payload, unwrap
 )

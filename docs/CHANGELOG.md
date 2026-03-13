@@ -1,5 +1,49 @@
 # `clientity` -- changelog
 
+## [0.1.8] -- Mar. 13th, 2026
+
+### Added
++ **Descriptor-based `Bound[B, R]`**: `Bound` now inherits from `typical.Descriptor[B, R]`, carrying return type `R` as a second generic parameter for IDE inference
++ **`__client.Contract`**: Runtime-checkable protocol base for typed client contracts (`ct.client.Contract`)
++ **`__client.Factory[P]`**: Reusable typed client factory via `ct.client.factory(Contract)` 
++ **`__client.typed()`**: Static cast utility for casting clients to typed contracts without `type: ignore` in user code
++ **`client()` overloads**: `ct.client(interface, Contract)` returns the contract type directly for one-off typed creation
++ **`Descriptor[B, R]` base in `typical`**: Generic descriptor with `__get__`, `__set_name__`, `__access__` machinery — `Bound` inherits from it
+
+### Changed
+* **`Bound` generic signature**: `Bound[B]` → `Bound[B, R]`, all references updated (`WrappedEndpoint`, `Binds`, `__wrap`, `bound()`)
+* **`Client.__matmul__`**: Returns `t.Self` for type preservation through `@` chaining
+* **`Endpoint` TYPE_CHECKING stubs**: `__rshift__` now uses overloads to capture `R` from `t.Type[R]`, other operators return `Bound['Endpoint', t.Any]`
+* **`Requesting`/`Responding` hint unions**: Updated in prior version, confirmed working with new `Bound[B, R]`
+
+### Confirmed
+* **Protocol-based contracts provide full IDE inference**: Return types, parameter signatures (user-declared), and attribute visibility all resolve correctly via `t.Protocol` contracts
+* **Three typed client creation paths verified**: contract arg, factory, and `typed()` cast — all produce correct Pyright inference
+
+---
+
+## Current Agenda
+
+### Immediate
+1. Wire `__execute` refactor with directive detection in `http.py` (verify status)
+2. Integration test directives through full pipeline
+3. Clean up `type: ignore` sites (`Bound.__access__` return, `Client.__matmul__` Self return)
+
+### Hinting Roadmap
+- Phase 0: ✅ `Bound[B, R]` carries return type
+- Phase 1: ✅ Protocol contracts give full return type inference
+- Phase 2: ✅ `client()` overloads + `typed()` + `Factory` remove `type: ignore` from user code
+- Phase 3: Free via user-declared Protocol signatures
+- Phase 4: Subclass / declaration DSL (deferred)
+
+### Pinned for Later
+1. `Bound.__access__` return type — currently `type: ignore`, needs proper typing for descriptor instance access resolving to callable
+2. Namespace factory tuple/subscript unpacking
+3. `Payload`/`Query` field lists
+4. Excess positional → payload resolution
+5. Approach B protocol migration for directives
+6. Logging throughout directives module
+
 ## [0.1.7] -- Mar. 9th, 2026
 
 ### Added

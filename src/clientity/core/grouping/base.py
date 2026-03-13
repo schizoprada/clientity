@@ -14,7 +14,7 @@ from clientity.core.primitives import (
 if t.TYPE_CHECKING:
     from clientity.core.adapters import Adapter
 
-WrappedEndpoint = t.Union[Endpoint, Bound[Endpoint]]
+WrappedEndpoint = t.Union[Endpoint, Bound[Endpoint, t.Any]]
 GroupedEndpoint = tuple[str, Endpoint]
 GroupedGrouping = tuple[str, 'Grouping']
 

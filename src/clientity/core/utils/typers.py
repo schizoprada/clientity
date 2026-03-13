@@ -8,7 +8,7 @@ from clientity.core.primitives.bound import (
     B, Bound
 )
 
-def bound(ref: B, caller: t.Optional[Callable.Async] = None) -> Bound:
+def bound(ref: B, caller: t.Optional[Callable.Async] = None) -> Bound[B, t.Any]:
     call = caller
     if call is None:
         if callable(ref):

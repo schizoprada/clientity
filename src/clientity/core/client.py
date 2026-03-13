@@ -19,8 +19,8 @@ from clientity.core.primitives import (
 )
 from clientity.core.adapters import adapt, Adapter
 
-Binds = dict[str, Bound[Endpoint]]
-
+P = t.TypeVar('P') # , bound='Client'
+Binds = dict[str, Bound[Endpoint, t.Any]]
 class Client:
     __bound__: Binds
     base: str
@@ -38,7 +38,7 @@ class Client:
         self.interface = interface if (not callable(interface)) else (synced(interface)())
         self.adapter: Adapter = adapt(self.interface)
 
-    def __wrap(self, endpoint: Endpoint, exhaust: bool = False) -> Bound[Endpoint]:
+    def __wrap(self, endpoint: Endpoint, exhaust: bool = False) -> Bound[Endpoint, t.Any]:
         base, adapter, instructions = self.base, self.adapter, endpoint.instructions()
         async def wrapper(*args, **kwargs) -> Responded:
             return await http.execute(
@@ -95,13 +95,43 @@ class Client:
             self.__bound__[name] = attr
         super().__setattr__(name, attr)
 
-    def __matmul__(self, base: str) -> 'Client':
+    def __matmul__(self, base: str) -> t.Self:
         """@ - set base URL"""
-        return Client(self.interface, base=base, name=self.name)
+        return Client(self.interface, base=base, name=self.name) # type: ignore
 
+class __client:
+    @staticmethod
+    def typed(instance: Client, contract: t.Type[P]) -> P:
+        """Cast a client to a typed contract. No runtime effect."""
+        return instance # type: ignore
 
-def client(interface: Interfacing) -> Client:
-    return Client(interface)
+    @t.runtime_checkable
+    class Contract(t.Protocol):
+        """Base for typed client contracts."""
+        ...
+
+    class Factory(t.Generic[P]):
+        """Typed client factory — reusable."""
+        def __init__(self, contract: t.Type[P]) -> None:
+            self.contract = contract
+
+        def __call__(self, interface: Interfacing) -> P:
+            return __client.typed(Client(interface), self.contract)
+
+    def factory(self, contract: t.Type[P]) -> 'Factory[P]':
+        return self.Factory(contract)
+
+    @t.overload
+    def __call__(self, interface: Interfacing) -> Client: ...
+    @t.overload
+    def __call__(self, interface: Interfacing, contract: t.Type[P]) -> P: ...
+    def __call__(self, interface: Interfacing, contract: t.Any = None) -> t.Any:
+        c = Client(interface)
+        if contract is not None:
+            return self.typed(c, contract)
+        return c
+
+client = __client()
 
 
 """

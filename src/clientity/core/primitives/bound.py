@@ -5,6 +5,8 @@ import typing as t
 from clientity.core.hints import Callable, Call, Requesting, Responding
 from clientity.core.utils.calls import asynced
 
+# pre-hinting
+
 B = t.TypeVar("B")
 class Bound(t.Generic[B]):
     __ref__: B
